@@ -185,12 +185,17 @@ Além disso, o projeto busca demonstrar como análises estatísticas podem ser u
 
 ## Autores
 
-Júlio César Saldanha Landim
-Nathan Dias Cunha
-Christian Ximenes Paiva
-Messias Trajano Barbosa
-Alex Ehrich Sousa de Menezes
-Jefferson de Aguiar Sousa
+- Júlio César Saldanha Landim 
+
+- Nathan Dias Cunha
+
+- Christian Ximenes Paiva
+
+- Messias Trajano Barbosa
+
+- Alex Ehrich Sousa de Menezes
+
+- Jefferson de Aguiar Sousa
 
 Projeto desenvolvido para a disciplina de Tópicos Especiais em Computação.
 

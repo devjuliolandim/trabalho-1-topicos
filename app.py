@@ -33,9 +33,24 @@ def load_data():
 
     url = "https://docs.google.com/spreadsheets/d/1OmnQ7Yut5YDj-7n4LpLtceW8NGWWp3UW/export?format=csv"
 
-    url2 = "https://docs.google.com/spreadsheets/d/1-RGrWWvZf7u58g9tO0Ev2kBQZq1VMhRi/export?format=csv"
-
     df = pd.read_csv(url)
+
+    # LIMPEZA
+    df['VALUE'] = (
+        df['VALUE']
+        .astype(str)
+        .str.replace(',', '.', regex=False)
+    )
+
+    df['VALUE'] = pd.to_numeric(
+        df['VALUE'],
+        errors='coerce'
+    )
+
+    df['Year'] = pd.to_numeric(
+        df['Year'],
+        errors='coerce'
+    )
 
     return df
 
@@ -128,10 +143,10 @@ selected_subregion = st.sidebar.selectbox(
 
 df_subregion = df_region[df_region["Subregion"] == selected_subregion]
 
-paises = sorted(df_subregion["Country"].unique())
+countries = sorted(df_subregion["Country"].unique())
 selected_country = st.sidebar.selectbox(
     "País:",
-    paises
+    countries
 )
 
 df_countries = df_subregion[df_subregion["Country"] == selected_country]
@@ -420,10 +435,6 @@ Correlation between Year and Homicide Rate for **{selected_country}**:
 
 **Pearson = {country_pearson:.4f}**
 
-### Global Pearson
-Correlation considering ALL countries in the selected range:
-
-**Pearson = {global_pearson:.4f}**
 """)
 
 # =========================================================
@@ -436,6 +447,15 @@ elif abs(country_pearson) > 0.4:
     st.warning("Moderate linear correlation detected.")
 else:
     st.error("Weak linear correlation detected.")
+
+st.markdown(f"""
+
+### Global Pearson
+Correlation considering ALL countries in the selected range:
+
+**Pearson = {global_pearson:.4f}**
+""")
+
 
 # =========================================================
 # REGRESSION
