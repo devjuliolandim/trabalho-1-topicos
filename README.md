@@ -112,13 +112,13 @@ Durante o desenvolvimento do projeto foram realizadas:
 ## 1. Clone o repositório
 
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/devjuliolandim/trabalho-1-topicos.git
 ```
 
 ## 2. Acesse a pasta do projeto
 
 ```bash
-cd <nome-do-projeto>
+cd trabalho-1-topicos
 ```
 
 ## 3. Instale as dependências
