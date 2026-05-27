@@ -14,7 +14,7 @@ from sklearn.metrics import r2_score
 # =========================================================
 
 st.set_page_config(
-    page_title="UNODC Homicides Analysis",
+    page_title="UNODC: Análise de Homicídios",
     layout="wide"
 )
 
@@ -22,11 +22,7 @@ st.set_page_config(
 # TITLE
 # =========================================================
 
-st.title("UNODC Intentional Homicides Analysis")
-
-st.markdown("""
-Interactive statistical and regression analysis of intentional homicide rates using the UNODC dataset.
-""")
+st.title("UNODC: Análise de Homicídios")
 
 # =========================================================
 # LOAD DATA
@@ -36,6 +32,8 @@ Interactive statistical and regression analysis of intentional homicide rates us
 def load_data():
 
     url = "https://docs.google.com/spreadsheets/d/1OmnQ7Yut5YDj-7n4LpLtceW8NGWWp3UW/export?format=csv"
+
+    url2 = "https://docs.google.com/spreadsheets/d/1-RGrWWvZf7u58g9tO0Ev2kBQZq1VMhRi/export?format=csv"
 
     df = pd.read_csv(url)
 
@@ -49,13 +47,15 @@ df = df[
     (df["Category"] == "Total") &
     (df['Unit of measurement'] == 'Rate per 100,000 population')
 ]
+
+df_original = load_data()
 # =========================================================
 # SHOW COLUMNS
 # =========================================================
 
-st.sidebar.header("Dataset Information")
+# st.sidebar.header("Dataset Information")
 
-st.sidebar.write(df.columns.tolist())
+# st.sidebar.write(df.columns.tolist())
 
 # =========================================================
 # COLUMN CONFIG
@@ -71,45 +71,125 @@ VALUE_COL = "VALUE"
 # DATA CLEANING
 # =========================================================
 
-df[VALUE_COL] = pd.to_numeric(
-    df[VALUE_COL],
-    errors="coerce"
-)
+# MENSAGEM PRO JULIO: OS DADOS NÃO PRECISAM DE LIMPEZA, NÃO TEM VALORES NEGATIVOS OU NÃO NUMÉRICOS
+# NO PIOR DOS CASOS O VALOR É ZERO
+# O "TRATAMENTO" ANTERIOR TAVA COMENDO VÁRIAS LINHAS COM DADOS NORMAIS, PRINCIPALMENTE AS QUE TINHAM NUMEROS QUEBRADOS
+# O DATASET FILTRADO TAVA PRATICAMENTE SEM NENHUMA TAXA POR 100K HABITANTES POR CAUSA DISSO
 
-df[YEAR_COL] = pd.to_numeric(
-    df[YEAR_COL],
-    errors="coerce"
-)
+df_original['VALUE'] = df_original['VALUE'].astype(str).str.replace(',', '.')
+df_original['VALUE'] = pd.to_numeric(df_original['VALUE'], errors='coerce')
 
-df = df.dropna(
-    subset=[COUNTRY_COL, YEAR_COL, VALUE_COL]
-)
+# df["VALUE"] = pd.to_numeric(
+#     df["VALUE"],
+#     errors="coerce"
+# )
 
-df[YEAR_COL] = df[YEAR_COL].astype(int)
+# df[YEAR_COL] = pd.to_numeric(
+#     df[YEAR_COL],
+#     errors="coerce"
+# )
+
+# df = df.dropna(
+#     subset=[COUNTRY_COL, YEAR_COL, VALUE_COL]
+# )
+
+# df[YEAR_COL] = df[YEAR_COL].astype(int)
 
 # =========================================================
 # REMOVE INVALID VALUES
 # =========================================================
 
-df = df[
-    (df[VALUE_COL] >= 0)
-]
+# ISSO TA REMOVENDO LINHA QUE NÃO ERA PRA REMOVER
+# df = df[
+#     (df["VALUE"] >= 0)
+# ]
 
 # =========================================================
 # SIDEBAR
 # =========================================================
 
-st.sidebar.header("Filters")
+st.sidebar.header("Filtros")
 
-countries = sorted(df[COUNTRY_COL].unique())
+st.sidebar.subheader("Localização")
 
-selected_country = st.sidebar.selectbox(
-    "Select a Country",
-    countries
+regions = sorted(df_original["Region"].unique())
+selected_region = st.sidebar.selectbox(
+    "Região:",
+    regions
 )
 
+df_region = df_original[df_original["Region"] == selected_region]
+
+subregions = sorted(df_region["Subregion"].unique())
+selected_subregion = st.sidebar.selectbox(
+    "Subregião:",
+    subregions
+)
+
+df_subregion = df_region[df_region["Subregion"] == selected_subregion]
+
+paises = sorted(df_subregion["Country"].unique())
+selected_country = st.sidebar.selectbox(
+    "País:",
+    paises
+)
+
+df_countries = df_subregion[df_subregion["Country"] == selected_country]
+
+st.sidebar.subheader("Tipo de dado")
+
+indicators = sorted(df_countries["Indicator"].unique())
+selected_indicator = st.sidebar.selectbox(
+    "Indicador:",
+    indicators
+)
+
+df_indicators = df_countries[df_countries["Indicator"] == selected_indicator]
+
+dimensions = sorted(df_indicators["Dimension"].unique())
+selected_dimension = st.sidebar.selectbox(
+    "Dimensão:",
+    dimensions
+)
+
+df_dimensions = df_indicators[df_indicators["Dimension"] == selected_dimension]
+
+categories = sorted(df_dimensions["Category"].unique())
+selected_category = st.sidebar.selectbox(
+    "Categoria:",
+    categories
+)
+
+df_categories = df_dimensions[df_dimensions["Category"] == selected_category]
+
+sexes = sorted(df_dimensions["Sex"].unique())
+selected_sex = st.sidebar.selectbox(
+    "Sexo:",
+    sexes
+)
+
+df_sexes = df_categories[df_categories["Sex"] == selected_sex]
+
+ages = sorted(df_sexes["Age"].unique())
+selected_age = st.sidebar.selectbox(
+    "Idade:",
+    ages
+)
+
+df_ages = df_sexes[df_sexes["Age"] == selected_age]
+
+units = sorted(df_ages["Unit of measurement"].unique())
+selected_unit = st.sidebar.selectbox(
+    "Unidade de medida:",
+    units
+)
+
+df_units = df_ages[df_ages["Unit of measurement"] == selected_unit]
+
+st.sidebar.subheader("Datas")
+
 selected_range = st.sidebar.slider(
-    "Select Year Range",
+    "Intervalo de anos:",
     min_value=int(df[YEAR_COL].min()),
     max_value=int(df[YEAR_COL].max()),
     value=(2013, 2022)
@@ -118,13 +198,54 @@ selected_range = st.sidebar.slider(
 future_years = [2023, 2024, 2025, 2026]
 
 # =========================================================
+# CUSTOM CSS - REDUZIR PADDING DA SIDEBAR
+# =========================================================
+
+st.markdown(
+    """
+    <style>
+        /* 1. Reduz o espaçamento geral (gap) entre todos os blocos da sidebar */
+        [data-testid="stSidebarUserContent"] .stElementContainer {
+            margin-bottom: -0.5rem; /* Ajuste este valor para mais ou para menos */
+            margin-top: -0.2rem;
+        }
+
+        /* 2. Reduz o espaço interno (padding) do container principal da sidebar */
+        [data-testid="stSidebarUserContent"] {
+            padding-top: 0.8rem;
+            padding-bottom: 0.8rem;
+        }
+        
+        /* 3. Se quiser aproximar ainda mais os títulos dos selectboxes */
+        div[data-testid="stWidgetLabel"] p {
+            margin-bottom: -0.2rem !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =========================================================
 # FILTER DATA
 # =========================================================
 
-filtered_df = df[
-    (df[COUNTRY_COL] == selected_country) &
-    (df[YEAR_COL] >= selected_range[0]) &
-    (df[YEAR_COL] <= selected_range[1])
+# filtered_df = df_units[
+#     (df_units["Year"] >= selected_range[0]) &
+#     (df_units["Year"] <= selected_range[1])
+# ]
+
+filtered_df = df_original[
+    (df_original["Year"] >= selected_range[0]) &
+    (df_original["Year"] <= selected_range[1]) &
+    (df_original['Region'] == selected_region) &
+    (df_original['Subregion'] == selected_subregion) &
+    (df_original['Country'] == selected_country) &
+    (df_original['Indicator'] == selected_indicator) &
+    (df_original['Dimension'] == selected_dimension) &
+    (df_original['Category'] == selected_category) &
+    (df_original['Sex'] == selected_sex) &
+    (df_original['Age'] == selected_age) &
+    (df_original['Unit of measurement'] == selected_unit)
 ]
 
 filtered_df = filtered_df.sort_values(YEAR_COL)
@@ -142,9 +263,9 @@ global_range_df = df[
 # COUNTRY DATA
 # =========================================================
 
-st.header(f"{selected_country} Analysis")
+st.header(f"Análise de {selected_country}")
 
-st.subheader("Filtered Data")
+st.subheader("Dados Filtrados")
 
 st.dataframe(filtered_df)
 
@@ -152,17 +273,90 @@ st.dataframe(filtered_df)
 # TIME SERIES GRAPH
 # =========================================================
 
-st.subheader("Homicide Rate Over Time")
+if selected_unit == "Counts":
+    st.subheader(f"Quantidade de homicídios ao longo dos anos")
+else:
+    st.subheader(f"Taxa de homicídios ao longo dos anos")
 
 fig = px.scatter(
     filtered_df,
-    x=YEAR_COL,
-    y=VALUE_COL,
+    x="Year",
+    y="VALUE",
     trendline="ols",
-    title=f"Homicide Rates - {selected_country}"
+    title=f"{selected_unit} - {selected_country}",
+    labels={
+        "Year": "Ano",
+        "VALUE": f"{selected_unit}"
+    }
 )
 
+fig.update_xaxes(dtick=1)
+
 st.plotly_chart(fig, use_container_width=True)
+
+# =========================================================
+# MAPA INTERATIVO GLOBAL ANIMAÇÃO POR ANO
+# =========================================================
+
+st.header("Homícidios no Mundo")
+
+selected_unit2 = st.selectbox(
+    "Unidade de medida:",
+    ["Counts", "Rate per 100,000 population"]
+)
+
+# Filtramos os dados mantendo todos os países, mas ordenando por ano para a animação funcionar
+map_df = df_original[
+    (df_original['Year'] >= df_original["Year"].min()) &
+    (df_original['Year'] <= df_original["Year"].max()) &
+    (df_original['Indicator'] == 'Victims of intentional homicide') &
+    (df_original['Dimension'] == 'Total') &
+    (df_original['Category'] == 'Total') &
+    (df_original['Sex'] == 'Total') &
+    (df_original['Age'] == 'Total') &
+    (df_original['Unit of measurement'] == selected_unit2)
+]
+
+v_min = map_df['VALUE'].min()
+v_max = map_df['VALUE'].max()
+
+# Garantir que os anos estejam ordenados cronologicamente (essencial para a animação)
+map_df = map_df.sort_values(by="Year")
+
+# Criando o mapa choropleth animado
+fig_map = px.choropleth(
+    map_df,
+    locations="Iso3_code",          # Coluna com os nomes dos países
+    locationmode="ISO-3",   # Identificar por nome do país
+    color="VALUE",                # Coluna que define o gradiente de cor
+    hover_name="Country",         # Título no card ao passar o mouse
+    animation_frame="Year",       # Cria o slider e o botão Play por Ano
+    color_continuous_scale=px.colors.sequential.Reds, # Gradiente de cores (tons de vermelho)
+    range_color=[v_min, v_max],
+    labels={
+        "VALUE": f"{selected_unit2}",
+        "Year": "Ano"
+    },
+    title="Mapa Mundi: Homicídio"
+)
+
+# Customizações de layout do mapa para ficar mais limpo e fluido
+fig_map.update_layout(
+    geo=dict(
+        showframe=False,
+        showcoastlines=True,
+        projection_type='equirectangular' # Formato do mapa múndi
+    ),
+    height=600, # Altura do gráfico
+)
+
+# Ajustar a velocidade da animação (1 segundo = 1000 milissegundos)
+fig_map.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 1000
+fig_map.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 500
+
+# Exibir o mapa no Streamlit
+st.plotly_chart(fig_map, use_container_width=True)
+
 
 # =========================================================
 # STATISTICS
@@ -428,3 +622,4 @@ st.download_button(
     file_name="forecast_table.csv",
     mime="text/csv"
 )
+
